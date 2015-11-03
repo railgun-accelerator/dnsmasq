@@ -32,7 +32,7 @@ diff -Naur original/src/ipset.c patched/src/ipset.c
 +//  
 +//  return old_kernel ? old_add_to_ipset(setname, ipaddr, remove) : new_add_to_ipset(setname, ipaddr, af, remove);
 +  char command [255];
-+  sprintf(command, "ip route replace %s %s", inet_ntoa(ipaddr->addr), setname);
++  sprintf(command, "/srv/railgun/network/hacks.sh %s %s", inet_ntoa(ipaddr->addr.addr4), setname);
 +  return system(command);
  }
  
