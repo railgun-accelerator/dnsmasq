@@ -1,0 +1,54 @@
+# $Id$
+# Maintainer: Dave Reisner <dreisner@archlinux.org>
+# Contributor: Paul Mattal <paul@archlinux.org>
+# Contributor: Tom Newsom <Jeepster@gmx.co.uk>
+
+pkgname=dnsmasq
+pkgver=2.75
+pkgrel=1
+pkgdesc="Lightweight, easy to configure DNS forwarder and DHCP server"
+url="http://www.thekelleys.org.uk/dnsmasq/doc.html"
+arch=('i686' 'x86_64')
+license=('GPL')
+depends=('glibc' 'libdbus' 'gmp' 'nettle')
+install=$pkgname.install
+backup=('etc/dnsmasq.conf')
+source=("http://www.thekelleys.org.uk/$pkgname/$pkgname-$pkgver.tar.xz"
+        'dnsmasq.service'
+        'iproute.diff')
+md5sums=('887236f1ddde6eb57cdb9d01916c9f72'
+         'b87f68013c3e8b4bb37117de968d4603'
+         'SKIP')
+validpgpkeys=('269322E7D9255916E0394DD628FC869A289B82B7')  # Simon Kelley
+
+build_copts="-DHAVE_DNSSEC -DHAVE_DBUS"
+
+build() {
+  cd "$pkgname-$pkgver"
+
+  patch -uNp1 -i $srcdir/iproute.diff
+
+  make \
+    CFLAGS="$CPPFLAGS $CFLAGS" \
+    LDFLAGS="$LDFLAGS" \
+    COPTS="$build_copts"
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+
+  # need to pass COPTS here to avoid rebuilding the binary.
+  make \
+    COPTS="$build_copts" \
+    BINDIR=/usr/bin PREFIX=/usr DESTDIR="$pkgdir" install
+
+  install -Dm644 "dbus/dnsmasq.conf" "$pkgdir"/etc/dbus-1/system.d/dnsmasq.conf
+  install -Dm644 "dnsmasq.conf.example" "$pkgdir"/etc/dnsmasq.conf
+  install -Dm644 "$srcdir/dnsmasq.service" "$pkgdir"/usr/lib/systemd/system/dnsmasq.service
+
+  # DNSSEC setup
+  sed -i 's,%%PREFIX%%,/usr,' "$pkgdir"/etc/dnsmasq.conf
+  install -Dm644 "trust-anchors.conf" "$pkgdir"/usr/share/dnsmasq/trust-anchors.conf
+}
+
+# vim: ts=2 sw=2 et ft=sh
